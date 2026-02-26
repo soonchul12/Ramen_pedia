@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -9,23 +9,36 @@ const supabase = createClient(
 );
 
 export default function RamenUpload() {
+  const [user, setUser] = useState<any>(null); // 🚀 로그인한 유저 정보 저장용 상태
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
 
-  // 🚀 DB 저장을 위한 추가 상태값
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [rating, setRating] = useState<number>(5);
   const [content, setContent] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+
+  // 🚀 1. 현재 로그인한 유저가 있는지 확인 (화면 켜질 때 1번 실행)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // 로그인 상태가 바뀌면 바로바로 감지
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       setFile(selectedFile);
       setPreviewUrl(URL.createObjectURL(selectedFile));
-      // 상태 초기화
       setAiResult(null);
       setUploadedUrl(null);
     }
@@ -44,7 +57,7 @@ export default function RamenUpload() {
 
       const { data: publicUrlData } = supabase.storage.from('ramen_photos').getPublicUrl(fileName);
       const publicUrl = publicUrlData.publicUrl;
-      setUploadedUrl(publicUrl); // 저장용 URL 보관
+      setUploadedUrl(publicUrl);
 
       const aiResponse = await fetch('/api/verify-ramen', {
         method: 'POST',
@@ -68,26 +81,26 @@ export default function RamenUpload() {
     }
   };
 
-  // 🚀 최종적으로 DB에 리뷰를 저장하는 함수
   const handleSaveReview = async () => {
+    if (!user) return alert('로그인이 필요합니다!'); // 🚀 방어 로직
+
     setIsSaving(true);
     try {
       const { error } = await supabase.from('reviews').insert({
-        shop_id: 1, // 일단 테스트용으로 아까 넣은 '멘야준(1번)'으로 고정
+        user_id: user.id, // 🚀 2. DB에 내 고유 ID도 같이 넘겨주기!
+        shop_id: 1,       // (테스트용) 멘야준으로 고정
         rating: rating,
         content: content,
         photo_url: uploadedUrl,
-        is_verified: aiResult?.isRamen ?? false,
+        is_verified: aiResult.isRamen,
       });
 
       if (error) throw error;
 
       alert('리뷰가 성공적으로 저장되었습니다!');
-      // 저장 후 창 초기화
       setFile(null);
       setPreviewUrl(null);
       setAiResult(null);
-      setUploadedUrl(null);
       setContent('');
     } catch (err) {
       console.error(err);
@@ -97,6 +110,17 @@ export default function RamenUpload() {
     }
   };
 
+  // 🚀 3. 로그인을 안 한 상태면 업로드 창 대신 안내 메시지를 보여줌
+  if (!user) {
+    return (
+      <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', zIndex: 100, position: 'absolute', top: '20px', left: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '300px' }}>
+        <h3>🍜 라멘 인증 & 리뷰</h3>
+        <p style={{ color: '#666', fontSize: '14px', marginTop: '10px' }}>우측 상단에서 구글 로그인을 먼저 해주세요!</p>
+      </div>
+    );
+  }
+
+  // 로그인 한 상태면 정상적으로 업로드 폼 보여주기
   return (
     <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', zIndex: 100, position: 'absolute', top: '20px', left: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '300px' }}>
       <h3>🍜 라멘 인증 & 리뷰</h3>
@@ -104,20 +128,13 @@ export default function RamenUpload() {
       {!aiResult && (
         <>
           <input type="file" accept="image/*" onChange={handleFileChange} style={{ marginBottom: '10px' }} />
-          {previewUrl && (
-            <img src={previewUrl} alt="미리보기" style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }} />
-          )}
-          <button
-            onClick={handleUpload}
-            disabled={isUploading || !file}
-            style={{ padding: '10px', width: '100%', backgroundColor: '#ff5a5f', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
+          {previewUrl && <img src={previewUrl} alt="미리보기" style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }} />}
+          <button onClick={handleUpload} disabled={isUploading || !file} style={{ padding: '10px', width: '100%', backgroundColor: '#ff5a5f', color: 'white', border: 'none', borderRadius: '4px' }}>
             {isUploading ? 'AI가 분석 중...' : '사진 올리고 검수받기'}
           </button>
         </>
       )}
 
-      {/* AI 검수 완료 후 나타나는 화면 */}
       {aiResult && (
         <div style={{ marginTop: '10px' }}>
           {aiResult.isRamen ? (
@@ -131,7 +148,6 @@ export default function RamenUpload() {
             </div>
           )}
 
-          {/* 라멘일 때만 별점과 리뷰 입력창 표시 */}
           {aiResult.isRamen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <label>

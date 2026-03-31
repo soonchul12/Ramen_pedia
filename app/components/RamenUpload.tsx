@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import StarRating from './StarRating';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function RamenUpload() {
-  const [user, setUser] = useState<any>(null); // 🚀 로그인한 유저 정보 저장용 상태
+export default function RamenUpload({ onReviewSaved }: { onReviewSaved: () => void }) {
+  const [user, setUser] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -20,13 +21,11 @@ export default function RamenUpload() {
   const [content, setContent] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // 🚀 1. 현재 로그인한 유저가 있는지 확인 (화면 켜질 때 1번 실행)
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
-    // 로그인 상태가 바뀌면 바로바로 감지
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -66,11 +65,7 @@ export default function RamenUpload() {
       });
 
       const data = await aiResponse.json();
-
-      if (!aiResponse.ok) {
-        const detail = data.detail ? ` - ${data.detail}` : '';
-        throw new Error((data.error || `서버 오류 (${aiResponse.status})`) + detail);
-      }
+      if (!aiResponse.ok) throw new Error(data.error || 'AI 분석 중 오류 발생');
 
       setAiResult(data);
     } catch (err) {
@@ -82,22 +77,23 @@ export default function RamenUpload() {
   };
 
   const handleSaveReview = async () => {
-    if (!user) return alert('로그인이 필요합니다!'); // 🚀 방어 로직
+    if (!user) return alert('로그인이 필요합니다!');
 
     setIsSaving(true);
     try {
       const { error } = await supabase.from('reviews').insert({
-        user_id: user.id, // 🚀 2. DB에 내 고유 ID도 같이 넘겨주기!
-        shop_id: 1,       // (테스트용) 멘야준으로 고정
+        user_id: user.id,
+        shop_id: 1, // Mock
         rating: rating,
         content: content,
         photo_url: uploadedUrl,
-        is_verified: aiResult.isRamen,
+        is_verified: aiResult?.isRamen,
       });
 
       if (error) throw error;
 
       alert('리뷰가 성공적으로 저장되었습니다!');
+      onReviewSaved();
       setFile(null);
       setPreviewUrl(null);
       setAiResult(null);
@@ -110,68 +106,154 @@ export default function RamenUpload() {
     }
   };
 
-  // 🚀 3. 로그인을 안 한 상태면 업로드 창 대신 안내 메시지를 보여줌
   if (!user) {
     return (
-      <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', zIndex: 100, position: 'absolute', top: '20px', left: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '300px' }}>
-        <h3>🍜 라멘 인증 & 리뷰</h3>
-        <p style={{ color: '#666', fontSize: '14px', marginTop: '10px' }}>우측 상단에서 구글 로그인을 먼저 해주세요!</p>
+      <div style={{ 
+        padding: '30px', 
+        backgroundColor: 'white', 
+        borderRadius: 'var(--radius-lg)', 
+        boxShadow: 'var(--shadow)', 
+        width: '360px',
+        textAlign: 'center'
+      }}>
+        <h3 style={{ marginBottom: '12px' }}>🍜 라멘 인증하기</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px' }}>
+          리뷰를 남기려면 먼저 로그인이 필요합니다.
+        </p>
       </div>
     );
   }
 
-  // 로그인 한 상태면 정상적으로 업로드 폼 보여주기
   return (
-    <div style={{ padding: '20px', backgroundColor: 'white', borderRadius: '8px', zIndex: 100, position: 'absolute', top: '20px', left: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '300px' }}>
-      <h3>🍜 라멘 인증 & 리뷰</h3>
+    <div style={{ 
+      padding: '30px', 
+      backgroundColor: 'white', 
+      borderRadius: 'var(--radius-lg)', 
+      boxShadow: 'var(--shadow)', 
+      width: '360px',
+      border: '1px solid var(--border)'
+    }}>
+      <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '20px', letterSpacing: '-0.5px' }}>
+        🍜 라멘 인증 & 리뷰
+      </h3>
 
       {!aiResult && (
-        <>
-          <input type="file" accept="image/*" onChange={handleFileChange} style={{ marginBottom: '10px' }} />
-          {previewUrl && <img src={previewUrl} alt="미리보기" style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }} />}
-          <button onClick={handleUpload} disabled={isUploading || !file} style={{ padding: '10px', width: '100%', backgroundColor: '#ff5a5f', color: 'white', border: 'none', borderRadius: '4px' }}>
-            {isUploading ? 'AI가 분석 중...' : '사진 올리고 검수받기'}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div 
+            onClick={() => document.getElementById('file-upload')?.click()}
+            style={{
+              width: '100%',
+              height: '200px',
+              backgroundColor: 'var(--surface)',
+              border: '2px dashed var(--border)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              overflow: 'hidden',
+              position: 'relative'
+            }}
+          >
+            {previewUrl ? (
+              <img src={previewUrl} alt="미리보기" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <>
+                <span style={{ fontSize: '32px', marginBottom: '8px' }}>📸</span>
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>사진을 업로드해주세요</span>
+              </>
+            )}
+            <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+          </div>
+          
+          <button 
+            onClick={handleUpload} 
+            disabled={isUploading || !file} 
+            style={{ 
+              padding: '14px', 
+              width: '100%', 
+              backgroundColor: isUploading ? 'var(--text-muted)' : 'var(--primary)', 
+              color: 'white', 
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 700,
+              fontSize: '15px',
+              transition: 'all 0.2s'
+            }}
+          >
+            {isUploading ? 'AI 분석 중...' : '라멘 인증받기'}
           </button>
-        </>
+        </div>
       )}
 
       {aiResult && (
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.4s' }}>
           {aiResult.isRamen ? (
-            <div style={{ backgroundColor: '#e6ffe6', padding: '10px', borderRadius: '4px', marginBottom: '10px' }}>
-              <p style={{ color: 'green', margin: 0 }}>✅ <strong>통과!</strong> ({aiResult.brothType || '라멘'})</p>
+            <div style={{ 
+              backgroundColor: '#F0FFF4', 
+              padding: '12px', 
+              borderRadius: 'var(--radius-sm)', 
+              border: '1px solid #C6F6D5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{ color: '#38A169' }}>✅</span>
+              <p style={{ color: '#2F855A', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                훌륭한 <strong>{aiResult.brothType || '라멘'}</strong> 인증 완료!
+              </p>
             </div>
           ) : (
-            <div style={{ backgroundColor: '#ffe6e6', padding: '10px', borderRadius: '4px', marginBottom: '10px' }}>
-              <p style={{ color: 'red', margin: 0 }}>❌ <strong>반려!</strong> 라멘이 아닌 것 같습니다.</p>
-              <p style={{ fontSize: '12px' }}>{aiResult.reason}</p>
+            <div style={{ 
+              backgroundColor: '#FFF5F5', 
+              padding: '12px', 
+              borderRadius: 'var(--radius-sm)', 
+              border: '1px solid #FED7D7' 
+            }}>
+              <p style={{ color: '#C53030', fontSize: '14px', fontWeight: 600, margin: 0 }}>❌ 라멘이 아닌 것 같습니다.</p>
+              <p style={{ fontSize: '12px', color: '#9B2C2C', marginTop: '4px' }}>{aiResult.reason}</p>
             </div>
           )}
 
           {aiResult.isRamen && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <label>
-                별점:
-                <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ marginLeft: '10px' }}>
-                  <option value={5}>⭐⭐⭐⭐⭐ (5점)</option>
-                  <option value={4}>⭐⭐⭐⭐ (4점)</option>
-                  <option value={3}>⭐⭐⭐ (3점)</option>
-                  <option value={2}>⭐⭐ (2점)</option>
-                  <option value={1}>⭐ (1점)</option>
-                </select>
-              </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>평가하기</label>
+                <StarRating rating={rating} onRatingChange={setRating} size={32} />
+              </div>
 
-              <textarea
-                placeholder="간단한 리뷰를 남겨주세요!"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                style={{ width: '100%', padding: '8px', height: '60px', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
+              <div>
+                <label style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>리뷰 남기기</label>
+                <textarea
+                  placeholder="맛은 어떠셨나요? 육수의 깊이나 면의 식감을 공유해주세요."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    height: '100px', 
+                    borderRadius: 'var(--radius-md)', 
+                    border: '1px solid var(--border)',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    resize: 'none'
+                  }}
+                />
+              </div>
 
               <button
                 onClick={handleSaveReview}
                 disabled={isSaving}
-                style={{ padding: '10px', width: '100%', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+                style={{ 
+                  padding: '14px', 
+                  width: '100%', 
+                  backgroundColor: '#0070F3', 
+                  color: 'white', 
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 700,
+                  fontSize: '15px'
+                }}
               >
                 {isSaving ? '저장 중...' : '리뷰 등록하기'}
               </button>

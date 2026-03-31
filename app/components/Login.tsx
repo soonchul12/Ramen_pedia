@@ -8,16 +8,18 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function Login() {
+interface LoginProps {
+  isScrolled?: boolean;
+}
+
+export default function Login({ isScrolled = true }: LoginProps) {
   const [user, setUser] = useState<any>(null);
 
-  // 현재 로그인한 유저 정보 가져오기
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
-    // 로그인 상태가 변할 때마다 업데이트
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -25,35 +27,67 @@ export default function Login() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 구글 로그인 실행 함수
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}`, // 로그인 후 돌아올 주소
+        redirectTo: `${window.location.origin}`,
       },
     });
   };
 
-  // 로그아웃 실행 함수
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 100, backgroundColor: 'white', padding: '10px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+    <div>
       {user ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={user.user_metadata.avatar_url} alt="프로필" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
-          <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{user.user_metadata.full_name}님</span>
-          <button onClick={signOut} style={{ padding: '5px 10px', backgroundColor: '#eee', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img 
+            src={user.user_metadata.avatar_url} 
+            alt="프로필" 
+            style={{ width: '32px', height: '32px', borderRadius: '50%', border: `2px solid ${isScrolled ? 'var(--border)' : 'rgba(255,255,255,0.3)'}` }} 
+          />
+          <span style={{ 
+            fontSize: '14px', 
+            fontWeight: 600, 
+            color: isScrolled ? 'var(--text-main)' : 'white' 
+          }}>
+            {user.user_metadata.full_name}
+          </span>
+          <button 
+            onClick={signOut} 
+            style={{ 
+              padding: '6px 12px', 
+              backgroundColor: isScrolled ? 'var(--surface)' : 'rgba(255,255,255,0.2)', 
+              color: isScrolled ? 'var(--text-muted)' : 'white',
+              border: 'none', 
+              borderRadius: '20px', 
+              fontSize: '12px',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
             로그아웃
           </button>
         </div>
       ) : (
-        <button onClick={signInWithGoogle} style={{ padding: '8px 15px', backgroundColor: '#4285F4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-          Google로 시작하기
+        <button 
+          onClick={signInWithGoogle} 
+          style={{ 
+            padding: '8px 20px', 
+            backgroundColor: isScrolled ? 'var(--primary)' : 'white', 
+            color: isScrolled ? 'white' : 'var(--primary)', 
+            border: 'none', 
+            borderRadius: '20px', 
+            fontWeight: 700,
+            fontSize: '14px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            transition: 'all 0.2s'
+          }}
+        >
+          시작하기
         </button>
       )}
     </div>

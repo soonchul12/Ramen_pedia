@@ -25,9 +25,11 @@ const ncpKeyId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID ?? '';
 export default function MapSection({
   shops: initialShops = [],
   isMiniMap = false,
+  center,
 }: {
   shops?: Shop[];
   isMiniMap?: boolean;
+  center?: { lat: number, lng: number };
 }) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
   const [displayShops, setDisplayShops] = useState<Shop[]>(initialShops);
@@ -127,7 +129,7 @@ export default function MapSection({
           </div>
         )}
 
-        <Map shops={displayShops} />
+        <Map shops={displayShops} center={center} />
       </div>
     </NavermapsProvider>
   );

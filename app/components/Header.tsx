@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import Login from './Login';
 
-export default function Header() {
+interface HeaderProps {
+  onExploreClick: () => void;
+  onRankingClick: () => void;
+}
+
+export default function Header({ onExploreClick, onRankingClick }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,7 +41,8 @@ export default function Header() {
           fontSize: '24px', 
           fontWeight: 900, 
           color: scrolled ? 'var(--primary)' : 'white',
-          letterSpacing: '-1px'
+          letterSpacing: '-1px',
+          textDecoration: 'none'
         }}>
           RAMEN<span style={{ color: scrolled ? 'var(--text-main)' : 'rgba(255,255,255,0.8)' }}>PEDIA</span>
         </a>
@@ -64,17 +70,35 @@ export default function Header() {
         </div>
       </div>
 
-      <nav style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <a href="#" style={{ 
-          fontSize: '15px', 
-          fontWeight: 600, 
-          color: scrolled ? 'var(--text-main)' : 'white' 
-        }}>라멘 지도</a>
-        <a href="#" style={{ 
-          fontSize: '15px', 
-          fontWeight: 600, 
-          color: scrolled ? 'var(--text-main)' : 'white' 
-        }}>랭킹</a>
+      <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <button 
+          onClick={onExploreClick}
+          style={{ 
+            fontSize: '15px', 
+            fontWeight: 600, 
+            color: scrolled ? 'var(--text-main)' : 'white',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0
+          }}
+        >
+          라멘 지도
+        </button>
+        <button 
+          onClick={onRankingClick}
+          style={{ 
+            fontSize: '15px', 
+            fontWeight: 600, 
+            color: scrolled ? 'var(--text-main)' : 'white',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0
+          }}
+        >
+          랭킹
+        </button>
         <Login isScrolled={scrolled} />
       </nav>
     </header>

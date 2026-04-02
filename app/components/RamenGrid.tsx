@@ -9,9 +9,21 @@ interface Shop {
   rating?: number;
   image_url?: string;
   location?: string;
+  lat?: number;
+  lng?: number;
 }
 
-export default function RamenGrid({ shops, title, icon }: { shops: Shop[], title: string, icon?: string }) {
+export default function RamenGrid({ 
+  shops, 
+  title, 
+  icon, 
+  onShopClick 
+}: { 
+  shops: Shop[], 
+  title: string, 
+  icon?: string, 
+  onShopClick?: (shop: Shop) => void 
+}) {
   return (
     <section style={{ padding: '60px 0' }}>
       <div className="container">
@@ -27,10 +39,14 @@ export default function RamenGrid({ shops, title, icon }: { shops: Shop[], title
         }}>
           {shops.length > 0 ? (
             shops.map((shop) => (
-              <RamenCard key={shop.id} shop={shop} />
+              <RamenCard 
+                key={shop.id} 
+                shop={shop} 
+                onClick={() => onShopClick?.(shop)} 
+              />
             ))
           ) : (
-            // Placeholder/Skeleton if needed
+            // Placeholder/Skeleton
             [1, 2, 3, 4].map((i) => (
               <div key={i} style={{ 
                 height: '300px', 

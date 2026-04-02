@@ -9,29 +9,37 @@ interface Shop {
   location?: string;
 }
 
-export default function RamenCard({ shop }: { shop: Shop }) {
+export default function RamenCard({ 
+  shop, 
+  onClick 
+}: { 
+  shop: Shop; 
+  onClick?: () => void; 
+}) {
   // Mock image if not available
   const imageUrl = shop.image_url || `https://images.unsplash.com/photo-1557872245-741744979584?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80`;
   const rating = shop.rating || (4 + Math.random()).toFixed(1);
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: 'var(--radius-md)',
-      overflow: 'hidden',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-      cursor: 'pointer',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-      border: '1px solid var(--border)'
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-5px)';
-      e.currentTarget.style.shadow = 'var(--shadow)';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.shadow = '0 2px 10px rgba(0,0,0,0.04)';
-    }}
+    <div 
+      onClick={onClick}
+      style={{
+        backgroundColor: 'white',
+        borderRadius: 'var(--radius-md)',
+        overflow: 'hidden',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        cursor: 'pointer',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+        border: '1px solid var(--border)'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-5px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.04)';
+      }}
     >
       <div style={{
         position: 'relative',

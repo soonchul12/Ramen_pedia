@@ -28,12 +28,23 @@ export default function Login({ isScrolled = true }: LoginProps) {
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}`,
-      },
-    });
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase 설정(URL/KEY)이 누락되었습니다. .env.local 파일을 확인해주세요.');
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Login error:', err);
+      alert(err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.');
+    }
   };
 
   const signOut = async () => {

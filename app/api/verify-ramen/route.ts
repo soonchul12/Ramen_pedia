@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
-    // 3. Gemini 2.5 Flash 모델 (무료 한도 있음: 10 RPM, 250 RPD, 이미지 지원)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    // 3. Gemini 1.5 Flash 모델 (무료 한도 있음: 15 RPM, 1M TPM, 이미지 지원)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // 4. AI에게 내릴 프롬프트(명령어) 작성
     const prompt = `

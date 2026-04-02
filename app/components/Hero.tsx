@@ -1,6 +1,11 @@
 'use client';
 
-export default function Hero() {
+interface HeroProps {
+  onExploreClick: () => void;
+  onReviewClick: () => void;
+}
+
+export default function Hero({ onExploreClick, onReviewClick }: HeroProps) {
   return (
     <section style={{
       height: '600px',
@@ -52,29 +57,48 @@ export default function Hero() {
         </p>
         
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-          <button style={{
-            padding: '16px 32px',
-            backgroundColor: 'var(--primary)',
-            color: 'white',
-            borderRadius: '30px',
-            fontSize: '18px',
-            fontWeight: 700,
-            boxShadow: '0 10px 20px rgba(255, 75, 43, 0.3)',
-            transition: 'transform 0.2s'
-          }}>
+          <button 
+            onClick={onExploreClick}
+            style={{
+              padding: '16px 32px',
+              backgroundColor: 'var(--primary)',
+              color: 'white',
+              borderRadius: '30px',
+              fontSize: '18px',
+              fontWeight: 700,
+              boxShadow: '0 10px 20px rgba(255, 75, 43, 0.3)',
+              transition: 'transform 0.2s',
+              cursor: 'pointer',
+              border: 'none'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
             맛집 탐색하기
           </button>
-          <button style={{
-            padding: '16px 32px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)',
-            color: 'white',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '30px',
-            fontSize: '18px',
-            fontWeight: 700,
-            transition: 'all 0.2s'
-          }}>
+          <button 
+            onClick={onReviewClick}
+            style={{
+              padding: '16px 32px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '30px',
+              fontSize: '18px',
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
             리뷰 작성하기
           </button>
         </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 interface StarRatingProps {
   rating: number;
-  onRatingChange: (rating: number) => void;
+  onRatingChange?: (rating: number) => void;
   size?: number;
   readonly?: boolean;
 }
@@ -18,7 +18,7 @@ export default function StarRating({ rating, onRatingChange, size = 24, readonly
         <button
           key={star}
           type="button"
-          onClick={() => !readonly && onRatingChange(star)}
+          onClick={() => !readonly && onRatingChange?.(star)}
           onMouseEnter={() => !readonly && setHover(star)}
           onMouseLeave={() => !readonly && setHover(0)}
           style={{

@@ -2,7 +2,7 @@
 
 import { Container, Marker, NaverMap, useNavermaps } from 'react-naver-maps';
 
-export default function Map({ shops }: { shops: any[] }) {
+export default function Map({ shops, center }: { shops: any[], center?: { lat: number, lng: number } }) {
   const navermaps = useNavermaps();
   const MapDiv = Container;
 
@@ -15,6 +15,7 @@ export default function Map({ shops }: { shops: any[] }) {
     >
       <NaverMap
         defaultCenter={new navermaps.LatLng(37.5567, 126.9194)}
+        center={center ? new navermaps.LatLng(center.lat, center.lng) : undefined}
         defaultZoom={15}
       >
         {shops.map((shop) => (
